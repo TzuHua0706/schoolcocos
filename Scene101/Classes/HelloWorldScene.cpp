@@ -27,7 +27,7 @@ HelloWorld::~HelloWorld()
 {
 
 #if EXERCISE == 1
-	_jumpAction->release();
+	_jumpAction->release(); // 因為被保留要主動釋放
 #endif
 
 }
@@ -50,11 +50,11 @@ bool HelloWorld::init()
 
 #if EXAMPLES == 1
 // 音效與音樂 --------------------------------------------------------------------------------
-	//auto bkmusic = (cocostudio::ComAudio *)rootNode->getChildByName("bkmusic")->getComponent("bkmusic");
-	//bkmusic->playBackgroundMusic();
+	auto bkmusic = (cocostudio::ComAudio *)rootNode->getChildByName("bkmusic")->getComponent("bkmusic"); // 如果用cocos-2d 編輯器放入音樂
+	bkmusic->playBackgroundMusic(); // 如果用cocos-2d 編輯器放入音樂
 
-	SimpleAudioEngine::getInstance()->playBackgroundMusic("./music/SR_bg.mp3", true);
-	SimpleAudioEngine::getInstance()->setBackgroundMusicVolume(0.2f);  //尚未實作
+	//SimpleAudioEngine::getInstance()->playBackgroundMusic("./music/SR_bg.mp3", true);
+	//SimpleAudioEngine::getInstance()->setBackgroundMusicVolume(0.2f);  //尚未實作
 	//SimpleAudioEngine::getInstance()->stopBackgroundMusic();	// 停止背景音樂
 	SimpleAudioEngine::getInstance()->preloadEffect("thinking cloud.mp3");	// 預先載入音效檔
 	unsigned int eid = SimpleAudioEngine::getInstance()->playEffect("thinking cloud.mp3",true);  // 播放音效檔
@@ -68,9 +68,9 @@ bool HelloWorld::init()
 	auto runner = (cocos2d::Sprite *)rootNode->getChildByName("cuber01");
 	runner->setColor(Color3B(75,155,77));
 	Point pt = runner->getPosition();
-	auto jumpAction = cocos2d::JumpTo::create(1.25f, Point(pt.x - 600, pt.y), 100, 3);
-	auto tintTo = cocos2d::TintTo::create(1.25f, Color3B(50, 125, 250));
-	runner->runAction(tintTo);
+	auto jumpAction = cocos2d::JumpTo::create(1.25f, Point(pt.x - 600, pt.y), 100, 3); // (所花時間,目的地,高度,次數)
+	auto tintTo = cocos2d::TintTo::create(1.25f, Color3B(50, 125, 250)); // 改變色彩
+	runner->runAction(tintTo); // 執行!!
 	runner->runAction(jumpAction);
 #elif EXERCISE == 1
 	//  ------ 課堂練習一  ------
@@ -78,15 +78,20 @@ bool HelloWorld::init()
 	_runner->setColor(Color3B(75, 155, 77));
 	Point pt = _runner->getPosition();
 	_jumpAction = cocos2d::JumpTo::create(1.25f, Point(pt.x - 600, pt.y), 100, 3);
-	_jumpAction->retain();
+	_jumpAction->retain(); // 保留不被釋放 because creat會自動把未用東西釋放 最後要記得自己釋放!
+
+	Button *cuberbtn = dynamic_cast<Button*>(rootNode->getChildByName("CuberBtn")); // dynamic_cast會幫你檢查型別
+	cuberbtn->addTouchEventListener(CC_CALLBACK_2(HelloWorld::CuberBtnTouchEvent, this)); // touch事件 呼叫函式
+
 #endif
+
 //---------------------------------------------------------------------------------------------		
 
 #elif EXAMPLES == 3
 // Button -------------------------------------------------------------------------------------
-	Button *cuberbtn = dynamic_cast<Button*>(rootNode->getChildByName("CuberBtn"));
-	//Button *cuberbtn = (cocos2d::ui::Button *)(rootNode->getChildByName("CuberBtn"));
-	cuberbtn->addTouchEventListener(CC_CALLBACK_2(HelloWorld::CuberBtnTouchEvent, this));
+	Button *cuberbtn = dynamic_cast<Button*>(rootNode->getChildByName("CuberBtn")); // dynamic_cast會幫你檢查型別
+	//Button *cuberbtn = (cocos2d::ui::Button *)(rootNode->getChildByName("CuberBtn")); // 與上一行同功能  宣告用在已知型別狀態下(不會檢查)
+	cuberbtn->addTouchEventListener(CC_CALLBACK_2(HelloWorld::CuberBtnTouchEvent, this)); // touch事件 呼叫函式
 //---------------------------------------------------------------------------------------------	
 
 #elif EXAMPLES == 4
@@ -117,7 +122,7 @@ bool HelloWorld::init()
 	loadingBar->setPercent(50);
 #else 
 	_loadingBar = (cocos2d::ui::LoadingBar *)rootNode->getChildByName("LoadingBar_1");
-	_loadingBar->setDirection(LoadingBar::Direction::LEFT);
+	_loadingBar->setDirection(LoadingBar::Direction::RIGHT);
 	_loadingBar->setPercent(100);
 #endif
 //---------------------------------------------------------------------------------------------	
@@ -138,7 +143,7 @@ bool HelloWorld::init()
 	runner->setColor(Color3B(135, 250, 50));
 	auto action = (ActionTimeline *)CSLoader::createTimeline("MainScene.csb");
 	rootNode->runAction(action);
-	action->gotoFrameAndPlay(0, 21, true);
+	action->gotoFrameAndPlay(0, 24, true);
 //---------------------------------------------------------------------------------------------	
 
 #elif EXAMPLES == 10
@@ -167,6 +172,13 @@ bool HelloWorld::init()
 
 #endif
 
+	_listener1 = EventListenerTouchOneByOne::create();	//創建一個一對一的事件聆聽器
+	_listener1->onTouchBegan = CC_CALLBACK_2(HelloWorld::onTouchBegan, this);		//加入觸碰開始事件
+	_listener1->onTouchMoved = CC_CALLBACK_2(HelloWorld::onTouchMoved, this);		//加入觸碰移動事件
+	_listener1->onTouchEnded = CC_CALLBACK_2(HelloWorld::onTouchEnded, this);		//加入觸碰離開事件
+
+	this->_eventDispatcher->addEventListenerWithSceneGraphPriority(_listener1, this);	//加入剛創建的事件聆聽器
+
 // 將 doStep 函式掛入 schedule list 中，每一個 frame 就都會被呼叫到
 	this->schedule(CC_SCHEDULE_SELECTOR(HelloWorld::doStep));
 	return true;
@@ -175,7 +187,7 @@ bool HelloWorld::init()
 
 void HelloWorld::doStep(float dt)
 {
-#if EXERCISE == 2 //課堂練習二
+#if EXERCISE == 2 //課堂練習二 每秒扣5%
 	float t = _loadingBar->getPercent();
 	if (t >= dt * 5 )  t = t - dt *5;
 	else t = 0;
@@ -190,7 +202,7 @@ void HelloWorld::CuberBtnTouchEvent(Ref *pSender, Widget::TouchEventType type)
 	switch (type)
 	{
 		case Widget::TouchEventType::BEGAN:
-			log("Touch Down");
+			log("Touch Down"); // cocos-2d 編輯器可用變化
 			break;
 		case Widget::TouchEventType::MOVED:
 			log("Touch Move");
@@ -202,7 +214,7 @@ void HelloWorld::CuberBtnTouchEvent(Ref *pSender, Widget::TouchEventType type)
 			_runner->runAction(_jumpAction);
 #endif
 			break;
-		case Widget::TouchEventType::CANCELED:
+		case Widget::TouchEventType::CANCELED: // 按下後移開位置放開
 			log("Touch Cancelled");
 			break;
 		default:
@@ -234,4 +246,23 @@ void HelloWorld::sliderEvent(cocos2d::Ref* sender, cocos2d::ui::Slider::EventTyp
 		int maxPercent = slider->getMaxPercent();
 		_sliderValue->setString(StringUtils::format("Percent %5.2f", 100.0 * percent / maxPercent));
 	}
+}
+
+bool  HelloWorld::onTouchBegan(cocos2d::Touch *pTouch, cocos2d::Event *pEvent)//觸碰開始事件
+{
+	Point touchLoc = pTouch->getLocation();
+
+	_triAction->gotoFrameAndPlay(0, 35, false);
+	
+	return true;
+}
+
+void  HelloWorld::onTouchMoved(cocos2d::Touch *pTouch, cocos2d::Event *pEvent) //觸碰移動事件
+{
+	Point touchLoc = pTouch->getLocation();
+}
+
+void  HelloWorld::onTouchEnded(cocos2d::Touch *pTouch, cocos2d::Event *pEvent) //觸碰結束事件 
+{
+	Point touchLoc = pTouch->getLocation();
 }

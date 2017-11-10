@@ -40,6 +40,12 @@ public:
 	void CuberBtnTouchEvent(cocos2d::Ref *pSender, cocos2d::ui::Widget::TouchEventType type);
 	void sliderEvent(cocos2d::Ref* sender, cocos2d::ui::Slider::EventType type);
 
+
+	cocos2d::EventListenerTouchOneByOne *_listener1;
+	bool onTouchBegan(cocos2d::Touch *pTouch, cocos2d::Event *pEvent); //觸碰開始事件
+	void onTouchMoved(cocos2d::Touch *pTouch, cocos2d::Event *pEvent); //觸碰移動事件
+	void onTouchEnded(cocos2d::Touch *pTouch, cocos2d::Event *pEvent); //觸碰結束事件 
+
 	// implement the "static create()" method manually
     CREATE_FUNC(HelloWorld);
 };
